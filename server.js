@@ -116,6 +116,11 @@ app.delete('/api/users/:id', (req, res) => {
     });
 });
 
+// Add health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'healthy' });
+});
+
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 }); 

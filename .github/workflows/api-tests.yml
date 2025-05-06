@@ -22,14 +22,18 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node-version }}
+        cache: 'npm'
         
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip'
 
     - name: Install Node.js dependencies
-      run: npm install
+      run: |
+        npm ci || npm install
+        npm list express sqlite3
 
     - name: Install Python dependencies
       run: |
@@ -39,10 +43,24 @@ jobs:
     - name: Start API server
       run: |
         npm start &
-        sleep 10  # Wait for server to start
+        echo "Waiting for server to start..."
+        # Wait for the server to be ready
+        for i in {1..30}; do
+          if curl -s http://localhost:3000/health >/dev/null; then
+            echo "Server is up!"
+            break
+          fi
+          if [ $i -eq 30 ]; then
+            echo "Server failed to start"
+            exit 1
+          fi
+          echo "Attempt $i: Server not ready yet..."
+          sleep 2
+        done
 
     - name: Run API tests
       run: python api_test.py
 
     - name: Stop API server
+      if: always()
       run: pkill node || true 
