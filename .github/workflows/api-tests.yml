@@ -16,24 +16,30 @@ jobs:
         python-version: [3.8]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Set up Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
         
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
 
+    - name: Clean npm cache
+      run: |
+        npm cache clean --force
+        rm -rf node_modules package-lock.json
+
     - name: Install Node.js dependencies
       run: |
-        npm ci || npm install
-        npm list express sqlite3
+        npm install
+        npm list express sqlite3 cors || true
 
     - name: Install Python dependencies
       run: |
@@ -42,7 +48,7 @@ jobs:
 
     - name: Start API server
       run: |
-        npm start &
+        node server.js &
         echo "Waiting for server to start..."
         # Wait for the server to be ready
         for i in {1..30}; do
